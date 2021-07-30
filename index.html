@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator Generator</title>
+    <link rel="stylesheet" href="./src/main.css"/>
+</head>
+<body>
+    <main>
+
+
+        <header>
+            <noscript>
+                JavaScript required to generate any generators, with the one and only
+            </noscript>
+            <h1>
+                Password Generator Generator
+                <a href="https://github.com/siverv/password-generator-generator" style="float: right">
+                    github
+                </a>
+            </h1>
+            <h2>State machines and symbolic dynamics and entropy, oh my!</h2>
+        </header>
+
+        
+
+        <section class="specification-section">
+            <wc-tab-panel id="specification-panel" search-param="main-tabs">
+
+
+                <h3 slot="tab">
+                    generator generator
+                </h3>
+                <section slot="content">
+                    <label>
+                        Presets:
+                        <select id="predefinedSelect">
+                        </select>
+                    </label>
+                    <div>
+                        <textarea id="specification" name="specification">
+                        </textarea>
+                    </div>
+                    <button type="submit" id="run">
+                        Generate Generator
+                    </button>
+                    <!-- <div>
+                        <label>
+                            Name:
+                            <input type="text">
+                        </label>
+                        <button>
+                            save
+                        </button>
+                    </div> -->
+                </section>
+
+
+                <h3 slot="tab">
+                    about
+                </h3>
+                <section slot="content">
+                    @README.md@
+                </section>
+
+
+                <h3 slot="tab">
+                    theory
+                </h3>
+                <section slot="content">
+                    @THEORY.md@
+                </section>
+
+
+            </wc-tab-panel>
+        </section>
+
+
+        <section class="analyzation-section">
+            <wc-tab-panel search-param="aside-tabs">
+
+
+                <h3 slot="tab">
+                    output
+                </h3>
+                <section slot="content">
+                    <fieldset>
+                        <legend>
+                            Entropy
+                            <button id="theSourceOfEntropy">
+                                Load Entropy Calculation Environment
+                            </button>
+                        </legend>
+                        <div id="theTargetOfEntropy" class="no-entropy">
+                            <ul>
+                                <li>
+                                    Each token is the equivalent of a choice among <span id="entropyHerePlease">???</span> characters
+                                </li>
+                                <li>
+                                    Also known as <span id="bitsOfEntropyHerePlease">???</span> bits of entropy per token
+                                </li>
+                            </ul>
+                        </div>
+                        <details>
+                            <summary>
+                                Adjacency matrix:
+                            </summary/>
+                            <pre id="adjacency-matrix"></pre><button>copy</button>
+                        </details>
+                    </fieldset>
+                    <!-- <fieldset>
+                        <legend>
+                            Generator Settings
+                        </legend>
+                        <form class="generator-settings">
+                            <label>
+                                Password length (number of tokens)
+                                <input type="number" min="1" step="1" value="100">
+                            </label>
+                            <label>
+                                Or password entropy
+                                <input disabled type="number" min="1" step="1" value="64">
+                                <i>¡calculate the entropy first!</i>
+                            </label>
+                            <details>
+                                <summary>
+                                    Advanced/Niche settings
+                                </summary>
+                                <label>
+                                    Initial state
+                                    <select>
+                                        <optgroup label="standard">
+                                            <option>random (long run-off length)</option>
+                                            <option>random (shortest run-off length)</option>
+                                        </optgroup>
+                                        <optgroup label="states">
+                                            <option disabled>Generate a generator first</option>
+                                        </optgroup>
+                                    </select>
+                                    <label>
+                                        Include specification as comment in generator
+                                        <input type="checkbox">
+                                    </label>
+                                </label>
+                            </details>
+                        </form>
+                    </fieldset> -->
+                    <fieldset>
+                        <legend>
+                            Sample output
+                            <!-- <button class="refresh-sample">
+                                ⟳
+                            </button> -->
+                        </legend>
+                        <pre id="sample-output">
+                        </pre>
+                    </fieldset>
+                    <wc-tab-panel selectedIndex="1" search-param="output-tabs">
+                        <h4 slot="tab">JavaScript Function</h4>
+                        <div slot="content" class="pre-with-copy">
+                            <textarea class="code" id="gen-jsfn"></textarea>
+                            <!-- <button>
+                                Copy
+                            </button> -->
+                        </div>
+                        <h4 slot="tab">Bookmarklet</h4>
+                        <div slot="content" class="pre-with-copy">
+                            <a href="#" id="gen-book-link">
+                                Generate Password
+                            </a>
+                            <textarea class="code compact" id="gen-book"></textarea>
+                            <!-- <button>
+                                Copy
+                            </button> -->
+                        </div>
+                        <h4 slot="tab">HTML-page</h4>
+                        <div slot="content" class="pre-with-copy">
+                            <textarea class="code" id="gen-html"></textarea>
+                            <!-- <button>
+                                Copy
+                            </button> -->
+                        </div>
+                        <h4 slot="tab">Data-URI HTML-page</h4>
+                        <div slot="content" class="pre-with-copy">
+                            <textarea class="code compact" id="gen-data"></textarea>
+                            <!-- <button>
+                                Copy
+                            </button> -->
+                        </div>
+                    </wc-tab-panel>
+                </section>
+
+
+                <h3 slot="tab">
+                    visualization
+                </h3>
+                <section slot="content">
+                    Here be dragons.
+
+                    <div>
+                        <i>
+                            The intention is to visualize the states and the relations between them using d3. As you might notice, I've not gotten there yet.
+                        </i>
+                    </div>
+                </section>
+            </wc-tab-panel>
+        </section>
+
+        
+        <footer>
+            <p>
+                <a href="https://github.com/siverv/">siverv</a> 2021
+            </p>
+        </footer>
+    </main>
+    <script type="module" src="./src/index.js"></script>
+</body>
+</html>
