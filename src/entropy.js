@@ -56,9 +56,10 @@ export async function getPyodide(){
         return await window.pyPromise;
     } else {
         window.pyPromise = new Promise((resolve, reject) => {
+            let originSuffix = window.location.origin.endsWith("github.io") ? "/password-generator-generator" : "";
             loadPyodide({
                 // indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0/full/"
-                indexURL : `${window.location.origin}/src/thirdParty/pyodide/`
+                indexURL : `${window.location.origin}${originSuffix}/src/thirdParty/pyodide/`
             }).then(async py => {
                 await py.loadPackage(["numpy"]);
                 window.py = py;
