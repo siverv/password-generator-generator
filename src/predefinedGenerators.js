@@ -1,6 +1,7 @@
 import {monograms} from './data/monograms.mjs';
 import {bigrams} from './data/bigrams.mjs';
 import {trigrams} from './data/trigrams.mjs';
+import {effWords} from './data/effWords.mjs';
 
 const predefinedGens = new Map();
 
@@ -88,36 +89,47 @@ states:
         emit: 10 * v + V
 `)
 
-predefinedGens.set("Correct Horse Battery Staple", `
+// predefinedGens.set("Correct Horse Battery Staple", `
+// groups:
+//     words:
+//         - Correct
+//         - Horse
+//         - Battery
+//         - Staple
+//         - ...
+
+// states:
+//     -   window: []
+//         emit: words
+// `)
+
+
+// predefinedGens.set("Correct Horse Fair Dice", `
+// groups:
+//     words:
+//         - Correct
+//         - Horse
+//         - Battery
+//         - Staple
+//         - ...
+//     fair-dice-roll: "4"  # <-- chosen by a fair dice roll
+
+// states:
+//     -   window: [fair-dice-roll]
+//         emit: words + fair-dice-roll
+//     -   window: [words]
+//         emit: fair-dice-roll
+// `)
+
+
+predefinedGens.set("EFF-Words", `
 groups:
     words:
-        - Correct
-        - Horse
-        - Battery
-        - Staple
-        - ...
+${effWords.map(word => `    - ${word}`).join("\n")}
 
 states:
     -   window: []
         emit: words
-`)
-
-
-predefinedGens.set("Correct Horse Fair Dice", `
-groups:
-    words:
-        - Correct
-        - Horse
-        - Battery
-        - Staple
-        - ...
-    fair-dice-roll: "4"  # <-- chosen by a fair dice roll
-
-states:
-    -   window: [fair-dice-roll]
-        emit: words + fair-dice-roll
-    -   window: [words]
-        emit: fair-dice-roll
 `)
 
 

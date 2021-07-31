@@ -1,27 +1,7 @@
 import * as passgen from './passgen.js';
 import predefined from './predefinedGenerators.js';
 import LZString from './thirdParty/lz-string.mjs';
-import "./components/WcTabPanel.js";
-import * as entropyLib from './entropy.js';
-
-let entropyInitialized = false;
-
-let entropyButton = document.getElementById("theSourceOfEntropy")
-let entropyArea = document.getElementById("theTargetOfEntropy")
-entropyButton.addEventListener("click", async () => {
-    entropyButton.setAttribute("disabled", "true");
-    await entropyLib.getPyodide();
-    await entropyLib.largestPositiveEigenvalue([[1]])
-    entropyInitialized = true;
-    entropyArea.classList.remove("no-entropy")
-    entropyButton.remove();
-});
-
-async function calcAndDisplayEntropy(states){
-    let entropy = await entropyLib.calculateEntropy(states);
-    entropyArea.querySelector("#entropyHerePlease").innerText = entropy.toFixed(2);
-    entropyArea.querySelector("#bitsOfEntropyHerePlease").innerText = Math.log(entropy, 2).toFixed(2);
-}
+import {minimalEntropy} from './entropy.js';
 
 window.lz = LZString;
 window.passgen = passgen;
@@ -30,6 +10,27 @@ const defaultPredefined = Array.from(predefined.keys()).pop();
 let select = document.getElementById("predefinedSelect");
 let textarea = document.getElementById("specification");
 let button = document.getElementById("run");
+
+function copyPrecedingText(ev){
+    let elm = ev.target.previousElementSibling;
+    let value;
+    if(elm.tagName === "INPUT" || elm.tagName === "TEXTAREA") {
+        value = elm.value;
+    } else {
+        value = elm.innerText;
+    }
+    if(window.navigator.clipboard) {
+        window.navigator.clipboard.writeText(value);
+        ev.target.innerText = "Copied!"
+    } else {
+        ev.target.innerText = "Copying denied."
+    }
+    clearTimeout(ev.target.resetTextTimeout)
+    ev.target.resetTextTimeout = setTimeout(() => ev.target.innerText = "Copy", 3000);
+}
+Array.from(document.getElementsByClassName("copy-preceding-text")).forEach(elm => {
+    elm.addEventListener("click", copyPrecedingText);
+})
 
 function setParamState(searchParams=location.search, hashParams=location.hash){
     if(searchParams?.[0] !== "?"){
@@ -59,7 +60,6 @@ function initialSpecification(){
     let hashParams = window.location.hash?.slice(1);
     if(hashParams){
         let searchParams = new URLSearchParams(hashParams);
-        console.log(searchParams.get("predefined"), predefined.get(searchParams.get("predefined")))
         if(searchParams.get("specification")){
             try {
                 textarea.value = LZString.decompressFromEncodedURIComponent(searchParams.get("specification"));
@@ -70,7 +70,11 @@ function initialSpecification(){
             }
         } else if(searchParams.get("predefined")){
             select.value = searchParams.get("predefined");
+        } else {
+            select.value = "Syllabetical"
         }
+    } else {
+        select.value = "Syllabetical"
     }
     textarea.value = predefined.get(select.value);
 }
@@ -101,39 +105,96 @@ window.addEventListener("load", () => {
     })
 })
 
-button.addEventListener("click", async () => {
-    let specification = textarea.value;
-    let states = passgen.parseSpecification(specification);
-    let matrix = entropyLib.adjacencyMatrix(states);
-    console.log("matrix", Object.fromEntries([...matrix].map(([key, value]) => {
-        return [
-            key.name,
-            Object.fromEntries([...value].map(([key, value]) => {
-                return [key.name, value]
-            }))
-        ];
-    })));
-    let mathMatrix = entropyLib.numericalMatrix(states, matrix);
-    console.log("mathMatrix", mathMatrix, JSON.stringify(mathMatrix));
-    let password = passgen.generatePassword(states);
-
-
-    document.getElementById("sample-output").innerText = passgen.generatePassword(states, 400);
-
-    console.log("password", password);
-    window.states = states;
-    window.mathMatrix = mathMatrix;
-
-    document.getElementById("gen-jsfn").innerText = passgen.generateGeneratorAsJSString(states);
-    let bookmarklet = passgen.generateGeneratorAsBookmarklet(states);
-    document.getElementById("gen-book").innerText = bookmarklet;
-    document.getElementById("gen-book-link").href = bookmarklet;
-    document.getElementById("gen-html").innerText = passgen.generateGeneratorAsHTML(states);
-    document.getElementById("gen-data").innerText = passgen.generateGeneratorAsDataURI(states);
-    if(entropyInitialized){
-        calcAndDisplayEntropy(states);
+document.getElementById("refresh-sample").addEventListener("click", () => {
+    if(!window.states){
+        return
     }
-    document.getElementById("adjacency-matrix").innerText = "["+mathMatrix.map((row, i) => {
-        return (i === 0 ? "" : " ") + "["+row.map(n => n.toFixed(2).padStart(6)).join(", ")+"]"
-    }).join(",\n\n") + "]"
+    document.getElementById("sample-output").innerText = passgen.generatePassword(window.states, 1000);
+})
+
+document.getElementById("desired-bits").addEventListener("input", function adjustLengthBasedOnDesiredBits(ev){
+    if(!window.states || isNaN(ev.target.value)){
+        return;
+    }
+    let desiredBits = parseInt(ev.target.value)
+    let {entropy, byLength} = window.states.entropy;
+    let lastLength = byLength[byLength.length-1];
+    let desiredLength = lastLength > desiredBits ?
+        byLength.findIndex(ent => ent >= desiredBits) + 1
+        : byLength.length + Math.ceil((desiredBits-lastLength)/entropy);
+    document.getElementById("desired-length").value = desiredLength;
+    generateGenerator();
+})
+
+document.getElementById("desired-length").addEventListener("input", function adjustEntropyBasedOnDesiredLength(ev){
+    if(!window.states || isNaN(ev.target.value)){
+        return;
+    }
+    let desiredLength = parseInt(ev.target.value)
+    let {entropy, byLength} = window.states.entropy;
+    let desiredBits = byLength[Math.min(byLength.length-1,desiredLength-1)];
+    if(byLength.length < desiredLength){
+        desiredBits = entropy * (byLength.length - desiredLength)
+    }
+    if(desiredBits < 0 ){
+        desiredBits = Infinity;
+    }
+    document.getElementById("desired-bits").value = desiredBits.toFixed(2);
+    generateGenerator();
+})
+
+function generateGenerator(){
+    let desiredLength = parseInt(document.getElementById("desired-length").value);
+    let options = {
+        desiredLength: isNaN(desiredLength) || desiredLength <= 0 ? 16 : desiredLength,
+        specification: window.specification,
+        showSpecification: false,
+    }
+    let states = window.states;
+    document.getElementById("gen-jsfn").value = passgen.generateGeneratorAsJSString(states, options);
+    let bookmarklet = passgen.generateGeneratorAsBookmarklet(states, options);
+    document.getElementById("gen-book").value = bookmarklet;
+    document.getElementById("gen-book-link").href = bookmarklet;
+    document.getElementById("gen-html").value = passgen.generateGeneratorAsHTML(states, options);
+    var dataUri = passgen.generateGeneratorAsDataURI(states, options);
+    document.getElementById("gen-data").value = dataUri;
+    document.getElementById("gen-data-link").href = dataUri;
+}
+
+button.addEventListener("click", () => {
+    let specification = window.specification = textarea.value;
+    let states;
+    try {
+        states = window.states = passgen.parseSpecification(specification);
+    } catch(ex) {
+        document.getElementById("error-log").innerText = `Malformed Generator: \n ${ex.toString()}`
+        return;
+    }
+    try {
+        document.getElementById("sample-output").innerText = passgen.generatePassword(states, 1000);
+    } catch {
+        document.getElementById("error-log").innerText = `Password generator failed: \n ${ex.toString()}`
+        return;
+    }
+    document.getElementById("error-log").innerText = "";
+
+    let {
+        entropy,
+        byLength,
+        equivalentToStandard
+    } = states.entropy = minimalEntropy(states);
+
+    document.getElementById("entropy-bits").innerText = entropy.toFixed(2);
+    document.getElementById("entropy-equiv").innerText = equivalentToStandard.toFixed(2);
+
+    let lastLength = byLength[byLength.length-1];
+    let secureLength = lastLength > 64 ?
+        byLength.findIndex(ent => ent >= 64) + 1
+        : byLength.length + Math.ceil((64-lastLength)/entropy);
+    document.getElementById("entropy-length").innerText = secureLength;
+    document.getElementById("desired-length").value = secureLength;
+    document.getElementById("desired-bits").value = 64;
+
+    generateGenerator()
+    
 })

@@ -1,5 +1,4 @@
 label { display: block; margin-bottom: 1rem; }
-h1 { margin: 0; }
 
 wc-tab-panel {
     --tab-gap: 1rem;
@@ -12,37 +11,45 @@ wc-tab-panel {
 
 #sample-output {
     width: 100%;
-    height: 10ch;
+    height: 6em;
     overflow: hidden;
     word-break: break-all;
     white-space: normal;
 }
 
-.no-entropy {
-    color: #ccc;
+.code-with-copy {
+    display: grid;
+    grid-template-columns: minmax(100px, auto) minmax(auto, 100px);
+    flex-direction: column;
 }
-
 .code {
-    width: 80ch;
-    height: 40ch;
     overflow: auto;
+    height: 20ch;
+    grid-column: 1
 } 
-
+.copy-preceding-text {
+    margin: 10px;
+    height: 2em;
+}
 .code.compact {
     height: 5ch;
     word-wrap: break-word;
     white-space: normal;
 }
 
-form.generator-settings {
+.generator-settings {
     padding: 20px;
 }
 
-@media (width > 110ch) {
+
+main {
+    max-width: 1400px;
+    margin: auto;
+}
+@media (min-width: 110ch) {
     main {
         display: grid;
         grid-template-columns: minmax(55ch,50%) minmax(55ch,50%);
-        grid-template-rows: 6em auto 6em;
         grid-gap: 1em;
     }
     main > header, main > footer {
@@ -50,11 +57,10 @@ form.generator-settings {
     }
 }
 
-@media (width <= 110ch) {
+@media (max-width: 110ch) {
     main {
         display: grid;
         grid-template-columns: auto;
-        grid-template-rows: 6em auto auto 6em;
         grid-gap: 1em;
     }
     main > header, main > footer {
@@ -83,6 +89,13 @@ main > section > wc-tab-panel > [slot="content"] > wc-tab-panel > [slot="content
 }
 
 
+main > header {
+    display: grid;
+    grid-template-columns: minmax(100px, auto) 8ch;
+}
+main > header > h1 > .github-link {
+    margin-left: auto;
+}
 main > header > h2 {
     color: #999;
     padding-left: 3em;

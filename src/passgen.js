@@ -63,11 +63,8 @@ export function parseSpecification(specification){
             emit: parseEmissions(state.emit)
         }
     });
-    console.log("states", states);
     states = normalizeStates(states);
-    console.log("normalized", states);
     states = disjointStates(states);
-    console.log("disjoint", states);
     return states;
 }
 
@@ -304,11 +301,12 @@ function deserializeStates(jsonStates){
     })
 }
 
-export function generateGeneratorAsJSString(states, specification){
+export function generateGeneratorAsJSString(states, options){
+    let desiredLength = options.desiredLength || 16;
     let jsonStates = serializeStates(states);
     return `
-function getPassword(N=16){
-    ${specification ? `/*\n${specification}\n*/` : ''}
+function newPassword(N=${desiredLength}){
+    ${options.showSpecification ? `/*\n${options.specification}\n*/` : ''}
     ${pickFromSet.toString()}
     ${randomChoiceOfEmissionInterval.toString()}
     ${outputMatchesWindow.toString()}
@@ -321,38 +319,53 @@ function getPassword(N=16){
 `
 }
 
-export function generateGeneratorAsBookmarklet(states, specification){
-    let jsString = generateGeneratorAsJSString(states, specification);
+export function generateGeneratorAsBookmarklet(states, options){
+    let jsString = generateGeneratorAsJSString(states, options);
     return `javascript:alert((${jsString.replace(/\s+/g," ")})())`
 }
 
-export function generateGeneratorAsHTML(states, specification) {
-    let jsString = generateGeneratorAsJSString(states, specification);
+export function generateGeneratorAsHTML(states, options) {
+    let jsString = generateGeneratorAsJSString(states, options);
     return `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>Password Generator</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
 </head>
 <body>
-<button id="generate">
-Generate Password
-</button>
-<input id="output" type="text"/>
-<script>
-${jsString}
-
-document.getElementById("generate").addEventListener("click", () => {
-    let password = getPassword();
-    document.getElementById("output").value = password;
-})
-</script>
+    <fieldset>
+        <legend>
+            <button id="generate">
+                Generate Password
+            </button>
+        </legend>
+        <input id="output" type="text">
+        <button id="copy">copy</button>
+        <script>
+            ${jsString}
+            document.getElementById("generate").addEventListener("click", () => {
+                document.getElementById("output").value = newPassword();
+                    document.getElementById("copy").innerText = "Copy"
+            })
+            document.getElementById("copy").addEventListener("click", () => {
+                let value = document.getElementById("output").value;
+                if(window.navigator.clipboard) {
+                    window.navigator.clipboard.writeText(value);
+                    document.getElementById("copy").innerText = "Copied!"
+                } else {
+                    document.getElementById("copy").innerText = "Copying denied."
+                }
+            })
+        </script>
+    </fieldset>
 </body>
 </html>`
 }
 
-export function generateGeneratorAsDataURI(states, specification) {
-    let htmlString = generateGeneratorAsHTML(states, specification);
+export function generateGeneratorAsDataURI(states, options) {
+    let htmlString = generateGeneratorAsHTML(states, options);
     return `data:text/html;base64,${btoa(htmlString)}`;
 }

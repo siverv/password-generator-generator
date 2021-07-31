@@ -11,13 +11,11 @@ The app produces four kinds of password generators:
 * An HTML-page with "generate"- and "copy"-button
 * A data-URI containing the aforementioned HTML-page.
 
-The generators use `window.crypto.getRandomValues` for randomness, and [entropy is calculated](./THEORY.md)
+The generators use `window.crypto.getRandomValues` for randomness, and entropy is calculated using [min-entropy](./THEORY.md)
 
 ## Entropy and Pronouncible Passwords
 
-How secure is an automatically generated pronouncible password? Do you need 16, 32, or perhaps even 64 characters to get close to the more secure `B&QlWYrj#$3A-&4P` passwords.
-
-The application uses pyodide to calculate the entropy of the resulting adjacency matrix from the states. Pyodide loads a basic python + numpy environment, which allows the app to use linear algebra functions, at the cost of some 10-20MB additional download. Due the longer load-times, entropy is only calculated after the user have opted in.
+How secure is an automatically generated pronouncible password? Do you need 16, 32, or perhaps even 64 characters to get close to the more secure `B&QlWYrj#$3A-&4P`-type passwords. The application uses min-entropy to calculate the entropy of the resulting adjacency matrix from the states. From this entropy calculation, one may judge whether a given password scheme is strong enough for the desired use.
 
 ## Correct Horses, and their Battery Staples
 
@@ -80,7 +78,6 @@ The `states`-field is a list of states, with a `window`-, `emit`- and (optionall
 
 * My knowledge of symbolic dynamics can be credited to Douglas Lind, who wrote [The Book](https://faculty.washington.edu/lind/symbolic-book/), and held a wonderful Danish-Norwegian master-class on the subject back in 2015. 
 * Inspiration from the LastPass pronouncible password generator on iOS, for being pronouncible but not including any measure of entropy or recommendations about length. 
-* [Pyodide](https://pyodide.org/en/stable/) for linear algebra in the familiar environment of numpy.
 * [lz-string](https://github.com/pieroxy/lz-string/) to compress the state before storing it in a hash.
 * [js-yaml](https://github.com/nodeca/js-yaml) for parsing the specification format
 * The `wc-tab-panel` web component is based on the code from [ndesmic's wc-lib](https://github.com/ndesmic/wc-lib) 

@@ -62,8 +62,8 @@ class WcTabPanel extends HTMLElement {
                     
                     .tabs ::slotted(*) { padding: 5px; border: 1px solid #ccc; user-select: none; cursor: pointer; }
                     .tabs ::slotted(.selected) { background: #efefef; }
-                    .tab-contents ::slotted(*) { display: none; }
-                    .tab-contents ::slotted(.selected) { display: block; padding: 5px; }
+                    .tab-contents ::slotted(:not(.selected)) { display: none!important; }
+                    .tab-contents ::slotted(.selected) { padding: 5px; }
                 </style>
                 <div class="tabs" tabindex="0">
                     <slot id="tab-slot" name="tab"></slot>

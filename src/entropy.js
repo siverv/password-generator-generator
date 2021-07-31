@@ -1,6 +1,4 @@
-import {loadPyodide} from './thirdParty/pyodide/pyodide.mjs';
 import { setUnion, setIntersect } from "./utils/setUtils.js";
-
 
 function windowContains(windowA, windowB){
     for(let i = 0; i < windowA.length; i++){
@@ -13,77 +11,90 @@ function windowContains(windowA, windowB){
     return true;
 }
 
-export function adjacencyMatrix(states){
-    let matrix = new Map();
+function minimalEntropyMatrix(states){
+    let stateKeyMatrix = new Map();
     for(let state of states){
         let row = new Map();
-        matrix.set(state, row);
+        stateKeyMatrix.set(state, row);
+        let weightSum = state.emit.reduce((sum,em) => sum + em.weight * em.tokens.size, 0);
         for(let {weight, tokens} of state.emit){
             for(let otherState of states){
                 if(windowContains(otherState.window, state.window.concat(new Set([tokens])))){
-                    let existingValue = row.get(otherState) || 0;
-                    row.set(otherState, existingValue + weight * tokens.size);
+                    let existingValue = row.get(otherState) || -Infinity;
+                    row.set(otherState, Math.max(existingValue, weight / weightSum));
                     break;
                 }
             }
         }
-    }
-    return matrix;
-}
-
-export function numericalMatrix(states, adjMatrix) {
-    if(!adjMatrix){
-        adjMatrix = adjacencyMatrix(states);
     }
     let matrix = [];
     for(let i = 0; i < states.length; i++){
         let state = states[i];
         let row = [];
         matrix[i] = row;
-        let stateRow = adjMatrix.get(state);
+        let stateRow = stateKeyMatrix.get(state);
         for(let j = 0; j < states.length; j++){
             let otherState = states[j];
             row[j] = stateRow.get(otherState) || 0;
         }
     }
-    return matrix
+    return matrix;
 }
 
-export async function getPyodide(){
-    if(window.py){
-        return window.py;
-    } else if(window.pyPromise){
-        return await window.pyPromise;
-    } else {
-        window.pyPromise = new Promise((resolve, reject) => {
-            let originSuffix = window.location.origin.endsWith("github.io") ? "/password-generator-generator" : "";
-            loadPyodide({
-                // indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0/full/"
-                indexURL : `${window.location.origin}${originSuffix}/src/thirdParty/pyodide/`
-            }).then(async py => {
-                await py.loadPackage(["numpy"]);
-                window.py = py;
-                resolve(py);
-            })
-        })
-        return await window.pyPromise;
+function minimalEntropyPowerInLogSpace(pi, MEM, N){
+    let length = MEM.length;
+    let logMEM = MEM.map(r => r.map(c => -Math.log2(c)));
+    let logPi = pi.map(p => -Math.log2(p));
+    const minimalEntropyDotLogSpace = (v, M) => {
+        let m = Infinity;
+        for(let i = 0; i < length; i++){
+            if(!isFinite(v[i])){
+                continue;
+            }
+            for(let j = 0; j < length; j++){
+                if(isFinite(M[i][j])) {
+                    m = Math.min(m, v[i] + M[i][j]);
+                }
+            }
+        }
+        return m;
     }
+    let R = logMEM;
+    let ents = [];
+    for(let n = 0; n < N; n++) {
+        let nR = [];
+        ents[n] = minimalEntropyDotLogSpace(logPi, R);
+        for(let i = 0; i < length; i++){
+            nR[i] = [];
+            for(let j = 0; j < length; j++) {
+                let m = Infinity
+                for(let k = 0; k < length; k++){
+                    if(isFinite(R[i][k]) && isFinite(logMEM[k][j])) {
+                        m = Math.min(m, R[i][k] + logMEM[k][j]);
+                    }
+                }
+                nR[i][j] = m;
+            }
+        }
+        R = nR;
+    }
+    ents[N] = minimalEntropyDotLogSpace(logPi, R)
+    return ents;
 }
 
-export async function largestPositiveEigenvalue(matrix){
-    let py = await getPyodide();
-    // if(!window.py){
-    //     throw new Error("Pyodide not loaded.");
-    // }
-    py.globals.set("matrix", py.toPy(matrix));
-    return py.runPython(`
-        import numpy as np
-        val, vec = np.linalg.eig(np.asarray(matrix))
-        max(np.real(val))
-    `);
-}
-
-export async function calculateEntropy(states){
-    let matrix = numericalMatrix(states);
-    return await largestPositiveEigenvalue(matrix);
+export function minimalEntropy(states, pi, N=100) {
+    if(states.length > 10){
+        N = 10;
+    }
+    let MEM = minimalEntropyMatrix(states);
+    if(!pi){
+        pi = Array.from({length: states.length}).map(_ => 1 / states.length);
+    }
+    let mep = minimalEntropyPowerInLogSpace(pi, MEM, N);
+    let general = mep[mep.length - 1] / mep.length;
+    return {
+        byLength: mep,
+        entropy: general,
+        equivalentToStandard: Math.pow(2, general)
+    }
 }
