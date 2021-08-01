@@ -117,54 +117,40 @@ function normalizeStates(states){
 }
 
 function disjointStates(states){
-    /*
-    Given:
-        [a + b, c + d]
-        [x + b, y + d]
-    Produce:
-        [a + b, c + d]
-        [(x + b) \ (a + b), (y + d) Λ (c + d)}] => [x, d]
-        [x + b, (y + d) \ (c + d)] => [x + b, y]
-    */
+    function makeDisjointWindows(primary, secondary) {
+        let disjoint = [];
+        let current = secondary;
+        for(let s = primary.length-1; s >= 0; s--){
+            if(!setOverlap(current[s], primary[s])){
+                disjoint.push(current);
+                break;
+            }
+            let next = current.slice();
+            next[s] = setSub(next[s], primary[s]);
+            if(next[s].size > 0){
+                disjoint.push(next);
+            }
+            if(s > 0){
+                next = current.slice();
+                next[s] = setIntersect(next[s], primary[s]);
+                current = next;
+            }
+        }
+        return disjoint;
+    }
     states = states.slice();
     for(let i = 0; i < states.length; i++){
         let state = states[i];
-        let relativestates = states.splice(i + 1, Infinity);
-        for(let step = state.window.length - 1; step >= 0; step--){
-            let windowStepSets = state.window[step];
-            let windowsNextStepSets = state.window[step - 1];
-            let nextRelativestates = [];
-            while(relativestates.length > 0) {
-                let otherState = relativestates.shift();
-                let otherSets = otherState.window[step];
-                if(!setOverlap(otherSets, windowStepSets)){
-                    states.push(otherState);
-                    continue;
-                }
-                if(step > 0){
-                    let newWindow = otherState.window.slice();
-                    newWindow[step] = setIntersect(newWindow[step], windowStepSets);
-                    if(newWindow[step].size > 0) {
-                        newWindow[step - 1] = setSub(newWindow[step - 1], windowsNextStepSets);
-                        if(newWindow[step - 1].size > 0) {
-                            nextRelativestates.push({
-                                ...otherState,
-                                name: `${otherState.name} - (${state.name})`,
-                                window: newWindow
-                            });
-                        }
-                    }
-                }
-                let newWindow = otherState.window.slice();
-                newWindow[step] = setSub(newWindow[step], windowStepSets);
-                if(newWindow[step].size > 0){
-                    states.push({
-                        ...otherState,
-                        window: newWindow
-                    });
-                }
+        let relativeStates = states.splice(i + 1, Infinity);
+        for(let laterState of relativeStates){
+            let disjointWindows = makeDisjointWindows(state.window, laterState.window);
+            for(let w = 0; w < disjointWindows.length; w++){
+                states.push({
+                    ...laterState,
+                    window: disjointWindows[w],
+                    name: w === 0 ? laterState.name : `${laterState.name} - (${state.name})${disjointWindows.length > 2 ? `[${w}]` : ""}`
+                })
             }
-            relativestates = nextRelativestates;
         }
     }
     return states;

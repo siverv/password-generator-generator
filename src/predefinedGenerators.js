@@ -134,21 +134,38 @@ states:
 
 
 // TODO: Fix problem with different window sizes.
-// predefinedGens.set("Correct Horse Yahtzee Staple", `
-// groups:
-//     words:
-//         - Correct
-//         - Horse
-//         - Battery
-//         - Staple
-//     fair-dice-roll: "123456"
+predefinedGens.set("Correct Horse Yahtzee Staple", `
+groups:
+    words:
+        - Correct
+        - Horse
+        - Battery
+        - Staple
+    yahtzee:
+        - YAHTZEE!
+    superyahtzee:
+        - SUPERYAHTZEE!
+    fair-dice-roll: "123456"
 
-// states:
-//     -   window: [fair-dice-roll, fair-dice-roll, fair-dice-roll, fair-dice-roll, fair-dice-roll]
-//         emit: words
-//     -   window: []
-//         emit: fair-dice-roll
-// `)
+states:
+    -   window: ["1","1","1","1","1"]
+        emit: yahtzee
+    -   window: ["2","2","2","2","2"]
+        emit: yahtzee
+    -   window: ["3","3","3","3","3"]
+        emit: yahtzee
+    -   window: ["4","4","4","4","4"]
+        emit: yahtzee
+    -   window: ["5","5","5","5","5"]
+        emit: yahtzee
+    -   window: ["6","6","6","6","6"]
+        emit: superyahtzee
+    -   window: [fair-dice-roll, fair-dice-roll, fair-dice-roll, fair-dice-roll, fair-dice-roll]
+        emit: words
+    -   window: []
+        emit: fair-dice-roll
+
+`)
 
 
 predefinedGens.set("1-grams", `
