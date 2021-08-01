@@ -1,8 +1,6 @@
 
 # Password Generator Generator
 
-> :warning: **This is a work in progress**: do not trust the calculated entropy as-is!
-
 This is a script and a small web-app to generate password generators using finite state machines (or shifts of finite type) with potentially non-uniform probability of different emissions and support for non-character emissions.
 
 The app produces four kinds of password generators:
@@ -12,6 +10,8 @@ The app produces four kinds of password generators:
 * A data-URI containing the aforementioned HTML-page.
 
 The generators use `window.crypto.getRandomValues` for randomness, and entropy is calculated using [min-entropy](./THEORY.md)
+
+[Demo](https://siverv.github.io/password-generator-generator/)
 
 ## Entropy and Pronouncible Passwords
 
