@@ -58,7 +58,7 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
             }
         }
         return m;
-    }
+    };
     let R = logMEM;
     let ents = [];
     for(let n = 0; n < N; n++) {
@@ -67,7 +67,7 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
         for(let i = 0; i < length; i++){
             nR[i] = [];
             for(let j = 0; j < length; j++) {
-                let m = Infinity
+                let m = Infinity;
                 for(let k = 0; k < length; k++){
                     if(isFinite(R[i][k]) && isFinite(logMEM[k][j])) {
                         m = Math.min(m, R[i][k] + logMEM[k][j]);
@@ -78,7 +78,7 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
         }
         R = nR;
     }
-    ents[N] = minimalEntropyDotLogSpace(logPi, R)
+    ents[N] = minimalEntropyDotLogSpace(logPi, R);
     return ents;
 }
 
@@ -88,7 +88,7 @@ export function minimalEntropy(states, pi, N=100) {
     }
     let MEM = minimalEntropyMatrix(states);
     if(!pi){
-        pi = Array.from({length: states.length}).map(_ => 1 / states.length);
+        pi = Array.from({length: states.length}).map(() => 1 / states.length);
     }
     let mep = minimalEntropyPowerInLogSpace(pi, MEM, N);
     let general = mep[mep.length - 1] / mep.length;
@@ -96,5 +96,5 @@ export function minimalEntropy(states, pi, N=100) {
         byLength: mep,
         entropy: general,
         equivalentToStandard: Math.pow(2, general)
-    }
+    };
 }

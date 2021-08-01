@@ -104,7 +104,7 @@ class WcTabPanel extends HTMLElement {
     initializedSelectedTabSlot = false;
     onTabSlotChange(){
         this.dom.tabs = this.dom.tabSlot.assignedElements();
-        if(!this.initializedSelectedTabSlot){
+        if(!this.initializedSelectedTabSlot && this.dom.tabs[this._selectedIndex]){
             this.dom.tabs[this._selectedIndex]?.classList.add("selected");
             this.initializedSelectedTabSlot = true;
         }
@@ -112,7 +112,7 @@ class WcTabPanel extends HTMLElement {
     initializedSelectedContentSlot = false;
     onContentSlotChange(){
         this.dom.contents = this.dom.contentSlot.assignedElements();
-        if(!this.initializedSelectedContentSlot){
+        if(!this.initializedSelectedContentSlot && this.dom.contents[this._selectedIndex]){
             this.dom.contents[this._selectedIndex]?.classList.add("selected");
             this.initializedSelectedContentSlot = true;
         }
@@ -164,33 +164,3 @@ class WcTabPanel extends HTMLElement {
 }
 
 customElements.define("wc-tab-panel", WcTabPanel);
-
-//Page UI
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const panel = document.querySelector("wc-tab-panel");
-//     let charCode = 68;
-
-//     dirButton.addEventListener("click", () => {
-//     if (panel.direction === "row") {
-//         panel.direction = "column";
-//         dirButton.textContent = "column";
-//     } else if (panel.direction === "column") {
-//         panel.direction = "row";
-//         dirButton.textContent = "row";
-//     }
-//     });
-//     addButton.addEventListener("click", () => {
-//     const letter = String.fromCharCode(charCode);
-//     const h1 = document.createElement("h1");
-//     h1.textContent = `Tab ${letter}`;
-//     h1.slot = "tab";
-//     const content = document.createElement("div");
-//     content.textContent = `Hello Tab ${letter}`;
-//     content.slot = "content";
-//     panel.appendChild(h1);
-//     panel.appendChild(content);
-//     charCode++;
-//     });
-// });
-

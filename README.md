@@ -9,7 +9,7 @@ The app produces four kinds of password generators:
 * An HTML-page with "generate"- and "copy"-button
 * A data-URI containing the aforementioned HTML-page.
 
-The generators use `window.crypto.getRandomValues` for randomness, and entropy is calculated using [min-entropy](./THEORY.md)
+The generators use [window.crypto.getRandomValues](https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues) for randomness, and entropy is calculated using [min-entropy](./THEORY.md)
 
 [Demo](https://siverv.github.io/password-generator-generator/)
 
@@ -80,4 +80,6 @@ The `states`-field is a list of states, with a `window`-, `emit`- and (optionall
 * Inspiration from the LastPass pronouncible password generator on iOS, for being pronouncible but not including any measure of entropy or recommendations about length. 
 * [lz-string](https://github.com/pieroxy/lz-string/) to compress the state before storing it in a hash.
 * [js-yaml](https://github.com/nodeca/js-yaml) for parsing the specification format
+* [@hpcc/wasm](https://github.com/hpcc-systems/hpcc-js-wasm) for visualizing dot-diagrams with graphviz
+* [KaTeX](https://katex.org/) for rendering the math of [THEORY.md](https://siverv.github.io/password-generator-generator/?main-tabs=2)
 * The `wc-tab-panel` web component is based on the code from [ndesmic's wc-lib](https://github.com/ndesmic/wc-lib) 

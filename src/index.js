@@ -3,10 +3,6 @@ import predefined from './predefinedGenerators.js';
 import LZString from './thirdParty/lz-string.mjs';
 import {minimalEntropy} from './entropy.js';
 
-window.lz = LZString;
-window.passgen = passgen;
-const defaultPredefined = Array.from(predefined.keys()).pop();
-
 let select = document.getElementById("predefinedSelect");
 let textarea = document.getElementById("specification");
 let button = document.getElementById("run");
@@ -21,16 +17,16 @@ function copyPrecedingText(ev){
     }
     if(window.navigator.clipboard) {
         window.navigator.clipboard.writeText(value);
-        ev.target.innerText = "Copied!"
+        ev.target.innerText = "Copied!";
     } else {
-        ev.target.innerText = "Copying denied."
+        ev.target.innerText = "Copying denied.";
     }
-    clearTimeout(ev.target.resetTextTimeout)
+    clearTimeout(ev.target.resetTextTimeout);
     ev.target.resetTextTimeout = setTimeout(() => ev.target.innerText = "Copy", 3000);
 }
 Array.from(document.getElementsByClassName("copy-preceding-text")).forEach(elm => {
     elm.addEventListener("click", copyPrecedingText);
-})
+});
 
 function setParamState(searchParams=location.search, hashParams=location.hash){
     if(searchParams?.[0] !== "?"){
@@ -39,22 +35,22 @@ function setParamState(searchParams=location.search, hashParams=location.hash){
     if(hashParams?.[0] !== "#"){
         hashParams = "#" + hashParams;
     }
-    window.history.replaceState(null, null, searchParams + hashParams)
+    window.history.replaceState(null, null, searchParams + hashParams);
 }
 
-textarea.addEventListener("blur", (ev) => {
+textarea.addEventListener("blur", () => {
     let hashParams = window.location.hash?.slice(1);
     let searchParams = new URLSearchParams(hashParams);
     searchParams.set("specification", LZString.compressToEncodedURIComponent(textarea.value));
     searchParams.delete("predefined");
 
-    setParamState(undefined, "#" + searchParams.toString())
+    setParamState(undefined, "#" + searchParams.toString());
     if(select.value){
         if(predefined.get(select.value) != textarea.value){
             select.value = null;
         }
     }
-})
+});
 
 function initialSpecification(){
     let hashParams = window.location.hash?.slice(1);
@@ -71,10 +67,10 @@ function initialSpecification(){
         } else if(searchParams.get("predefined")){
             select.value = searchParams.get("predefined");
         } else {
-            select.value = "Syllabetical"
+            select.value = "Syllabetical";
         }
     } else {
-        select.value = "Syllabetical"
+        select.value = "Syllabetical";
     }
     textarea.value = predefined.get(select.value);
 }
@@ -98,25 +94,25 @@ window.addEventListener("load", () => {
             }
             let hashParams = window.location.hash?.slice(1);
             let searchParams = new URLSearchParams(hashParams);
-            searchParams.set("predefined", ev.target.value)
+            searchParams.set("predefined", ev.target.value);
             searchParams.delete("specification");
-            setParamState(undefined, "#" + searchParams.toString())
+            setParamState(undefined, "#" + searchParams.toString());
         }
-    })
-})
+    });
+});
 
 document.getElementById("refresh-sample").addEventListener("click", () => {
     if(!window.states){
-        return
+        return;
     }
     document.getElementById("sample-output").innerText = passgen.generatePassword(window.states, 1000);
-})
+});
 
 document.getElementById("desired-bits").addEventListener("input", function adjustLengthBasedOnDesiredBits(ev){
     if(!window.states || isNaN(ev.target.value)){
         return;
     }
-    let desiredBits = parseInt(ev.target.value)
+    let desiredBits = parseInt(ev.target.value);
     let {entropy, byLength} = window.states.entropy;
     let lastLength = byLength[byLength.length-1];
     let desiredLength = lastLength > desiredBits ?
@@ -124,24 +120,24 @@ document.getElementById("desired-bits").addEventListener("input", function adjus
         : byLength.length + Math.ceil((desiredBits-lastLength)/entropy);
     document.getElementById("desired-length").value = desiredLength;
     generateGenerator();
-})
+});
 
 document.getElementById("desired-length").addEventListener("input", function adjustEntropyBasedOnDesiredLength(ev){
     if(!window.states || isNaN(ev.target.value)){
         return;
     }
-    let desiredLength = parseInt(ev.target.value)
+    let desiredLength = parseInt(ev.target.value);
     let {entropy, byLength} = window.states.entropy;
     let desiredBits = byLength[Math.min(byLength.length-1,desiredLength-1)];
     if(byLength.length < desiredLength){
-        desiredBits = entropy * (byLength.length - desiredLength)
+        desiredBits = entropy * (byLength.length - desiredLength);
     }
     if(desiredBits < 0 ){
         desiredBits = Infinity;
     }
     document.getElementById("desired-bits").value = desiredBits.toFixed(2);
     generateGenerator();
-})
+});
 
 function generateGenerator(){
     let desiredLength = parseInt(document.getElementById("desired-length").value);
@@ -149,7 +145,7 @@ function generateGenerator(){
         desiredLength: isNaN(desiredLength) || desiredLength <= 0 ? 16 : desiredLength,
         specification: window.specification,
         showSpecification: false,
-    }
+    };
     let states = window.states;
     document.getElementById("gen-jsfn").value = passgen.generateGeneratorAsJSString(states, options);
     let bookmarklet = passgen.generateGeneratorAsBookmarklet(states, options);
@@ -161,19 +157,25 @@ function generateGenerator(){
     document.getElementById("gen-data-link").href = dataUri;
 }
 
+let dotElm = document.getElementById("states-dot");
+let vizElm = document.getElementById("states-viz");
 button.addEventListener("click", () => {
     let specification = window.specification = textarea.value;
-    let states;
+    let states, labelMap;
     try {
-        states = window.states = passgen.parseSpecification(specification);
+        let parsed = passgen.parseSpecification(specification);
+        states = window.states = parsed.states;
+        labelMap = window.labelMap = parsed.labelMap;
     } catch(ex) {
-        document.getElementById("error-log").innerText = `Malformed Generator: \n ${ex.toString()}`
+        console.error(ex);
+        document.getElementById("error-log").innerText = `Malformed Generator: \n ${ex.toString()}`;
         return;
     }
     try {
         document.getElementById("sample-output").innerText = passgen.generatePassword(states, 1000);
-    } catch {
-        document.getElementById("error-log").innerText = `Password generator failed: \n ${ex.toString()}`
+    } catch (ex) {
+        console.error(ex);
+        document.getElementById("error-log").innerText = `Password generator failed: \n ${ex.toString()}`;
         return;
     }
     document.getElementById("error-log").innerText = "";
@@ -195,6 +197,53 @@ button.addEventListener("click", () => {
     document.getElementById("desired-length").value = secureLength;
     document.getElementById("desired-bits").value = 64;
 
-    generateGenerator()
-    
-})
+    generateGenerator();
+
+    dotElm.innerText = passgen.toDot(states, labelMap);
+    renderVisualization();
+});
+
+
+const promiseLoad = loadableElement => new Promise((resolve) => loadableElement.addEventListener("load", resolve));
+document.getElementById("initialize-graphviz").addEventListener("click", async (ev) => {
+    if(!ev.target.getAttribute("disabled")){
+        ev.target.setAttribute("disabled", "true");
+        let scriptsTemplate = document.getElementById("graphviz-scripts");
+        let scripts = scriptsTemplate.content.cloneNode(true);
+        let loadingPromise = promiseLoad(scripts.querySelector("script"));
+        document.body.append(scripts);
+        await loadingPromise;
+        renderVisualization();
+        ev.target.remove();
+    }
+});
+document.getElementById("initialize-katex").addEventListener("click", async (ev) => {
+    if(!ev.target.getAttribute("disabled")){
+        ev.target.setAttribute("disabled", "true");
+        let scriptsTemplate = document.getElementById("katex-scripts");
+        let scripts = scriptsTemplate.content.cloneNode(true);
+        let loadingPromises = Array.from(scripts.querySelectorAll("script")).map(promiseLoad);
+        document.body.append(scripts);
+        await Promise.all(loadingPromises);
+        window.renderMathInElement(document.querySelector(`.markdown.math`), {
+            delimiters: [
+                {left: "$$", right: "$$", display: true},
+                {left: "$", right: "$", display: false},
+            ]
+        });
+        ev.target.remove();
+    }
+});
+function renderVisualization(){
+    if(typeof window["@hpcc-js/wasm"] === "undefined"){
+        return;
+    }
+    let dot = dotElm.innerText;
+    if(!dot){
+        vizElm.innerHTML = `<i>Generate a password generator to visualize it</i>`;
+        return;
+    }
+    window["@hpcc-js/wasm"].graphviz.layout(dot, "svg", "dot").then(svgString => {
+        vizElm.innerHTML = svgString;
+    });
+}

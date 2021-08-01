@@ -1,0 +1,27 @@
+{
+  "name": "password-generator-generator",
+  "version": "1.0.0",
+  "description": "A system to generate stateful password generators with calculated entropy",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siverv/password-generator-generator.git"
+  },
+  "scripts": {
+    "lint": "eslint src/index.js"
+  },
+  "keywords": [
+    "entropy",
+    "password generators",
+    "shifts of finite type",
+    "symbolic dynamics"
+  ],
+  "license": "UNDECIDED",
+  "bugs": {
+    "url": "https://github.com/siverv/password-generator-generator/issues"
+  },
+  "homepage": "https://siverv.github.io/password-generator-generator/",
+  "devDependencies": {
+    "eslint": "^7.32.0"
+  }
+}

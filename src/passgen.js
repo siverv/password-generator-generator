@@ -3,29 +3,49 @@ import yaml from './thirdParty/yaml.js';
 
 export function parseSpecification(specification){
     let json = yaml.load(specification);
-    let groups = new Map(Array.from(Object.entries(json.groups||{})).map(([key, group]) => {
+    let groupNameMap = new Map(Array.from(Object.entries(json.groups||{})).map(([key, group]) => {
         return [key, new Set(group)];
     }));
+    // TODO: Name non-group token sets. 
+    // function getGroupOrDefineNewGroup(tokens, groupNameMap){
+    //     if(Array.isArray(tokens)){
+    //         let groupEntry = Array.from(groupNameMap).
+    //     } else if(typeof tokens === "string"){
+            
+    //     } else if(typeof tokens === "object"){
+    //         if(tokens.group){
+    //         } else if(tokens.groups){
+    //             let combinedSet = setUnion(...tokens)
+    //         } else if(tokens.tokens){
+    //             return getGroupOrDefineNewGroup(tokens.tokens);
+    //         }
+    //     }
+    //     if(groupNameMap.has(str)){
+    //         return groupNameMap.get(str);
+    //     } else {
+    //         let name = 
+    //     }
+    // }
     function parseGroupMult(str) {
         let match = str.match(/^\s*(?<weight>[0-9.]+)\s*\*\s*(?<group>.+)\s*$/);
         if(match){
             return {
                 weight: parseFloat(match.groups.weight),
-                tokens: groups.get(match.groups.group) || new Set(match.groups.group)
-            }
+                tokens: groupNameMap.get(match.groups.group) || new Set(match.groups.group)
+            };
         } else {
             return {
                 weight: 1,
-                tokens: groups.get(str) || new Set(str)
-            }
+                tokens: groupNameMap.get(str) || new Set(str)
+            };
         }
     }
     function parseGroupArithmetic(str){
         if(str.includes("+")){
             return str.split("+").map(term => {
                 return parseGroupMult(term.trim());
-            })
-        } else return [parseGroupMult(str.trim())]
+            });
+        } else return [parseGroupMult(str.trim())];
     }
     function parseWindowStep(step){
         if(typeof step === "string"){
@@ -34,8 +54,8 @@ export function parseSpecification(specification){
             return new Set(step.flatMap(parseGroupArithmetic).map(group => group.tokens));
         } else if(typeof step === "object" && (step.tokens || step.groups)){
             return step.tokens ?
-                    new Set(step.tokens)
-                    : step.groups.flatMap(group => groups.get(group));
+                new Set(step.tokens)
+                : step.groups.flatMap(group => groupNameMap.get(group));
         } else {
             return new Set();
         }
@@ -44,14 +64,14 @@ export function parseSpecification(specification){
         if(typeof emit === "string"){
             return parseGroupArithmetic(emit);
         } else if(Array.isArray(emit)){
-            return emit.flatMap(parseEmissions)
+            return emit.flatMap(parseEmissions);
         } else if(typeof emit === "object" && (emit.tokens || emit.groups)){
             return [{
                 weight: emit.weight || 1,
                 tokens: emit.tokens ?
                     new Set(emit.tokens)
-                    : emit.groups.flatMap(group => groups.get(group))
-            }]
+                    : emit.groups.flatMap(group => groupNameMap.get(group))
+            }];
         } else {
             return [];
         }
@@ -61,29 +81,31 @@ export function parseSpecification(specification){
             name: state.name || `state#${index}`,
             window: state.window.map(parseWindowStep),
             emit: parseEmissions(state.emit)
-        }
+        };
     });
-    states = normalizeStates(states);
-    states = disjointStates(states);
-    return states;
+    let labelMap = new Map(Array.from(groupNameMap).map(([label, set]) => [set, label]));
+    ({states, labelMap} = normalizeStates(states, labelMap));
+    ({states, labelMap} = disjointStates(states, labelMap));
+    return {states, labelMap};
 }
 
-function normalizeStates(states){
+function normalizeStates(states, labelMap){
     let setList = states.flatMap(state =>
         state.window.flatMap(step => Array.from(step))
-            .concat(state.emit.map(pair => pair.tokens)
-        )
+            .concat(state.emit.map(pair => pair.tokens))
     );
     let {
         domain,
         setMap,
-    } = makeSetsDisjoint(setList);
+        labelMap: newLabelMap
+    } = makeSetsDisjoint(setList, labelMap);
+    labelMap = newLabelMap;
     states.sort((a,b) =>
         (b.window.length - a.window.length)
         || (states.indexOf(a) - states.indexOf(b))
     );
     let windowSize = Math.max(1, ...states.map(state => state.window.length));
-    let basicWindow = Array.from({length: windowSize}).map(_ => new Set([domain]));
+    let basicWindow = Array.from({length: windowSize}).map(() => new Set([domain]));
     function normalizeWindow(window){
         return basicWindow.concat(window)
             .slice(-windowSize)
@@ -103,20 +125,20 @@ function normalizeStates(states){
             return {
                 weight: weight / maxWeight,
                 tokens
-            }
-        })
+            };
+        });
     }
     states = states.map(state => {
         return {
             ...state,
             window: normalizeWindow(state.window),
             emit: normalizeEmissions(state.emit)
-        }
-    })
-    return states;
+        };
+    });
+    return {states, labelMap};
 }
 
-function disjointStates(states){
+function disjointStates(states, labelMap){
     function makeDisjointWindows(primary, secondary) {
         let disjoint = [];
         let current = secondary;
@@ -149,11 +171,11 @@ function disjointStates(states){
                     ...laterState,
                     window: disjointWindows[w],
                     name: w === 0 ? laterState.name : `${laterState.name} - (${state.name})${disjointWindows.length > 2 ? `[${w}]` : ""}`
-                })
+                });
             }
         }
     }
-    return states;
+    return {states, labelMap};
 }
 
 function pickFromSet(set, randomInteger){
@@ -238,8 +260,8 @@ export function generatePassword(states, N = 100){
                 emit: emission,
                 min: sum,
                 max: (sum = sum + emission.weight * emission.tokens.size)
-            }
-        }))
+            };
+        }));
     }
 
 
@@ -247,7 +269,7 @@ export function generatePassword(states, N = 100){
     while(output.length < N + windowLength) {
         if(security++ > N * 2){
             console.log("oops", output);
-            return
+            return;
         }
         let found = false;
         for(let state of states){
@@ -272,19 +294,19 @@ export function generatePassword(states, N = 100){
 function serializeStates(states){
     return JSON.stringify(states, (k,v) => {
         if(v instanceof Set || v instanceof Map) {
-                return Array.from(v);
+            return Array.from(v);
         } else return v;
-    })
+    });
 }
 
 function deserializeStates(jsonStates){
     return JSON.parse(jsonStates, (k, v) => {
         if(k === "window"){
-            return v.map(step => new Set(step.map(set => new Set(set))))
+            return v.map(step => new Set(step.map(set => new Set(set))));
         } else if(k === "tokens") {
-            return new Set(v)
+            return new Set(v);
         } else return v;
-    })
+    });
 }
 
 export function generateGeneratorAsJSString(states, options){
@@ -302,16 +324,20 @@ function newPassword(N=${desiredLength}){
     let states = deserializeStates(atob("${btoa(jsonStates)}"));
     return generatePassword(states, N);
 }
-`
+`;
 }
 
 export function generateGeneratorAsBookmarklet(states, options){
     let jsString = generateGeneratorAsJSString(states, options);
-    return `javascript:alert((${jsString.replace(/\s+/g," ")})())`
+    return `javascript:alert((${jsString.replace(/\s+/g," ")})())`;
 }
 
 export function generateGeneratorAsHTML(states, options) {
     let jsString = generateGeneratorAsJSString(states, options);
+    let template = document.getElementById("password-generator-html-body");
+    let snippet = template.content.cloneNode(true);
+    let script = snippet.querySelector("script");
+    script.innerHTML = script.innerText.replace("/*@PASSWORD_GENERATOR_GOES_HERE@*/", jsString);
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -322,36 +348,70 @@ export function generateGeneratorAsHTML(states, options) {
     <title>Password Generator</title>
 </head>
 <body>
-    <fieldset>
-        <legend>
-            <button id="generate">
-                Generate Password
-            </button>
-        </legend>
-        <input id="output" type="text">
-        <button id="copy">copy</button>
-        <script>
-            ${jsString}
-            document.getElementById("generate").addEventListener("click", () => {
-                document.getElementById("output").value = newPassword();
-                    document.getElementById("copy").innerText = "Copy"
-            })
-            document.getElementById("copy").addEventListener("click", () => {
-                let value = document.getElementById("output").value;
-                if(window.navigator.clipboard) {
-                    window.navigator.clipboard.writeText(value);
-                    document.getElementById("copy").innerText = "Copied!"
-                } else {
-                    document.getElementById("copy").innerText = "Copying denied."
-                }
-            })
-        </script>
-    </fieldset>
+    ${snippet.firstElementChild.outerHTML}
 </body>
-</html>`
+</html>`;
 }
 
 export function generateGeneratorAsDataURI(states, options) {
     let htmlString = generateGeneratorAsHTML(states, options);
     return `data:text/html;base64,${btoa(htmlString)}`;
+}
+
+
+
+
+function windowContains(windowA, windowB){
+    for(let i = 0; i < windowA.length; i++){
+        let a = setUnion(...windowA[windowA.length - 1 - i]);
+        let b = setUnion(...windowB[windowB.length - 1 - i]);
+        if(setIntersect(a,b).size < b.size){
+            return false;
+        }
+    }
+    return true;
+}
+
+export function getGraphEdges(states){
+    let graphEdges = new Map();
+    for(let state of states){
+        let outgoingEdges = new Map();
+        graphEdges.set(state, outgoingEdges);
+        for(let emission of state.emit){
+            for(let otherState of states){
+                if(windowContains(otherState.window, state.window.concat(new Set([emission.tokens])))){
+                    let edgesToOtherState = outgoingEdges.get(otherState) || new Set();
+                    edgesToOtherState.add(emission);
+                    outgoingEdges.set(otherState, edgesToOtherState);
+                    break;
+                }
+            }
+        }
+    }
+    return graphEdges;
+}
+
+export function toDot(states, labelMap){
+    let stateKeyMap = new Map(states.map((state, index) => [state, `state${index}`]));
+    let graphEdges = getGraphEdges(states);
+    let dotEdgeLines = [];
+    for(let [state, outgoingEdges] of graphEdges){
+        let sourceKey = stateKeyMap.get(state);
+        dotEdgeLines.push(`${sourceKey} [label="${state.name}"];`);
+        for(let [otherState, edges] of outgoingEdges) {
+            let targetKey = stateKeyMap.get(otherState);
+            for(let edge of edges) {
+                let modifiers = [];
+                if(edge.weight != 1){
+                    modifiers.push("style=dotted");
+                }
+                let edgeLabel = labelMap.get(edge.tokens) || [...edge.tokens].toString().slice(0,20);
+                modifiers.push(`label="${edgeLabel}"`);
+                dotEdgeLines.push(`${sourceKey} -> ${targetKey} [${modifiers}];`);
+            }
+        }
+    }
+    return `digraph G {
+    ${dotEdgeLines.join("\n    ")}
+}`;
 }
