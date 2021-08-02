@@ -7,12 +7,12 @@ The entropy in use is [min-entropy](https://en.wikipedia.org/wiki/Min-entropy), 
 
 > :warning: The following is a personal exploration around the theory of entropy and should probably not be cited directly.
 
-1. [Entropy of Standard Password Generators](#Entropy-of-Standard-Password-Generators)
-2. [Entropy of Stateful Password Generators](#Entropy-of-Stateful-Password-Generators)
-3. [Entropy of Non-Irreducible Password Generators](#Entropy-of-Non-Irreducible-Password-Generators)
-4. [Entropy of Potentially Non-Uniform Password Generators](#Entropy-of-Potentially-Non-Uniform-Password-Generators)
-5. [Entropy of Stochastic Password Generators](#Entropy-of-Stochastic-Password-Generators)
-6. [Entropy of Obscure Password Generators](#Entropy-of-Obscure-Password-Generators)
+1. [Entropy of Standard Password Generators](#entropy-of-standard-password-generators)
+2. [Entropy of Stateful Password Generators](#entropy-of-stateful-password-generators)
+3. [Entropy of Non-Irreducible Password Generators](#entropy-of-non-irreducible-password-generators)
+4. [Entropy of Potentially Non-Uniform Password Generators](#entropy-of-potentially-non-uniform-Password-generators)
+5. [Entropy of Stochastic Password Generators](#entropy-of-stochastic-password-generators)
+6. [Entropy of Obscure Password Generators](#entropy-of-obscure-password-generators)
 
 ## Entropy of Standard Password Generators
 
@@ -62,13 +62,15 @@ $$ h(G_\mathcal{S}) = - \lim_{n\to\infty} \frac{1}{n}\log_2 B_n({G_\mathcal{S}})
 
 To find $B_n(G_\mathcal S)$, it can be useful to look upon the adjacency matrix of our state diagram
 
-$$ A_{S} = \begin{bmatrix}
+$$
+A_{S} = \begin{bmatrix}
     0 & aeiouy \\
     bcdfghjklmnpqrstvwxz & 0
 \end{bmatrix} = \begin{bmatrix}
     0 & 6 \\
     20 & 0
-\end{bmatrix} $$
+\end{bmatrix}
+$$
 
 The number of 2-letter passwords of the starting in state $i$ and ending in state $j$ is $\sum_{k\in\mathcal S} (A_{\mathcal S})_{ik}(A_{\mathcal S})_{kj}$, otherwise known as be $(A_{\mathcal S}^2)_{ij}$. This holds in general, and $(A_{\mathcal S}^n)_{ij}$ is is excatly the number of passwords from starting in state $i$ and ending in state $j$ and so we get
 

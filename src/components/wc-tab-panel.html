@@ -1,15 +1,23 @@
-// BASED ON: https://dev.to/ndesmic/how-to-make-a-tab-control-with-web-components-57on
-
-function setParamState(searchParams=location.search, hashParams=location.hash){
-    if(searchParams?.[0] !== "?"){
-        searchParams = "?" + searchParams;
-    }
-    if(hashParams?.[0] !== "#"){
-        hashParams = "#" + hashParams;
-    }
-    window.history.replaceState(null, null, searchParams + hashParams)
-}
-
+<template id="wc-tab-panel">
+    <style>
+        :host { display: flex; flex-direction: column; }
+        :host([direction="column"]) { flex-direction: row; }
+        :host([direction="column"]) .tabs { flex-direction: column; }
+        .tabs { display: flex; flex-direction: row; flex-wrap: nowrap; gap: var(--tab-gap, 0px); }
+        
+        .tabs ::slotted(*) { padding: 5px; border: 1px solid #ccc; user-select: none; cursor: pointer; }
+        .tabs ::slotted(.selected) { background: #efefef; }
+        .tab-contents ::slotted(:not(.selected)) { display: none!important; }
+        .tab-contents ::slotted(.selected) { padding: 5px; }
+    </style>
+    <div class="tabs" tabindex="0">
+        <slot id="tab-slot" name="tab"></slot>
+    </div>
+    <div class="tab-contents">
+        <slot id="content-slot" name="content"></slot>
+    </div>
+</template>
+<script>
 class WcTabPanel extends HTMLElement {
     static observedAttributes = ["selected-index", "direction"];
     _selectedIndex = 0;
@@ -52,26 +60,9 @@ class WcTabPanel extends HTMLElement {
         }
     }
     render() {
+        let template = document.getElementById("wc-tab-panel");
         this.shadow = this.attachShadow({ mode: "open" });
-        this.shadow.innerHTML = `
-                <style>
-                    :host { display: flex; flex-direction: column; }
-                    :host([direction="column"]) { flex-direction: row; }
-                    :host([direction="column"]) .tabs { flex-direction: column; }
-                    .tabs { display: flex; flex-direction: row; flex-wrap: nowrap; gap: var(--tab-gap, 0px); }
-                    
-                    .tabs ::slotted(*) { padding: 5px; border: 1px solid #ccc; user-select: none; cursor: pointer; }
-                    .tabs ::slotted(.selected) { background: #efefef; }
-                    .tab-contents ::slotted(:not(.selected)) { display: none!important; }
-                    .tab-contents ::slotted(.selected) { padding: 5px; }
-                </style>
-                <div class="tabs" tabindex="0">
-                    <slot id="tab-slot" name="tab"></slot>
-                </div>
-                <div class="tab-contents">
-                    <slot id="content-slot" name="content"></slot>
-                </div>
-            `;
+        this.shadow.appendChild(template.content.cloneNode(true));
         let tabs = this.shadow.querySelector(".tabs");
         tabs.addEventListener("keydown", event => {
             if (!event.getModifierState("Control") &&
@@ -136,7 +127,7 @@ class WcTabPanel extends HTMLElement {
         if(this.searchParamField){
             let searchParams = new URLSearchParams(location.search);
             searchParams.set(this.searchParamField, this.selectedIndex);
-            setParamState(searchParams.toString());
+            window.history.replaceState(null, null, "?" + searchParams.toString() + location.hash);
         }
     }
     attributeChangedCallback(name, oldValue, newValue) {
@@ -162,5 +153,5 @@ class WcTabPanel extends HTMLElement {
         return this._direction;
     }
 }
-
 customElements.define("wc-tab-panel", WcTabPanel);
+</script>
