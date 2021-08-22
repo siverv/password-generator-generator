@@ -187,7 +187,6 @@ function getConstructionLabel(set, setList, labelMap) {
             shortAntisetList.push(set);
         }
     }
-    console.log(set, shortSupersetList, shortAntisetList, labelMap);
     let unionLabel = shortSupersetList.map(set => labelMap.get(set)).join(" U ");
     let excludeLabel = shortAntisetList.map(set => " - " + labelMap.get(set)).join("");
     return `${unionLabel}${excludeLabel}`;

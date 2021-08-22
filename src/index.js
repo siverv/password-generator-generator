@@ -130,7 +130,7 @@ document.getElementById("desired-length").addEventListener("input", async functi
     let {entropy, byLength} = window.states.entropy;
     let desiredBits = byLength[Math.min(byLength.length-1,desiredLength-1)];
     if(byLength.length < desiredLength){
-        desiredBits = entropy * (byLength.length - desiredLength);
+        desiredBits += entropy * (desiredLength - byLength.length);
     }
     if(desiredBits < 0 ){
         desiredBits = Infinity;
@@ -154,7 +154,6 @@ async function generateGenerator(){
     document.getElementById("gen-book-link").href = bookmarklet;
     let html = await passgen.generateGeneratorAsHTML(states, options);
     document.getElementById("gen-html").value = html;
-    console.log(await passgen.generateGeneratorAsHTML(states, options));
     var dataUri = await passgen.generateGeneratorAsDataURI(states, options);
     document.getElementById("gen-data").value = dataUri;
     document.getElementById("gen-data-link").href = dataUri;
