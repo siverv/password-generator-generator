@@ -17556,4 +17556,4 @@ export const trigrams = new Map([
     ["JXZ", 1],
     ["JQL", 1],
     ["JQG", 1],
-])
+]);

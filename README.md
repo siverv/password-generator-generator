@@ -89,6 +89,7 @@ The `states`-field is a list of states, with a `window`-, `emit`- and (optionall
 - Auto-labelling of unnamed token-sets.
 - Refactoring, cleanup, and documentation
 - Sofic shifts / Explicit state transitions for the password generators.
+- Find how much entropy is needed for secure password.
 
 ## Credits
 

@@ -1,6 +1,6 @@
 import * as passgen from './passgen.js';
 import predefined from './predefinedGenerators.js';
-import LZString from './thirdParty/lz-string.mjs';
+import LZString from './thirdParty/lz-string.js';
 import {minimalEntropy} from './entropy.js';
 
 let select = document.getElementById("predefinedSelect");
@@ -108,7 +108,7 @@ document.getElementById("refresh-sample").addEventListener("click", () => {
     document.getElementById("sample-output").innerText = passgen.generatePassword(window.states, 1000);
 });
 
-document.getElementById("desired-bits").addEventListener("input", function adjustLengthBasedOnDesiredBits(ev){
+document.getElementById("desired-bits").addEventListener("input", async function adjustLengthBasedOnDesiredBits(ev){
     if(!window.states || isNaN(ev.target.value)){
         return;
     }
@@ -119,10 +119,10 @@ document.getElementById("desired-bits").addEventListener("input", function adjus
         byLength.findIndex(ent => ent >= desiredBits) + 1
         : byLength.length + Math.ceil((desiredBits-lastLength)/entropy);
     document.getElementById("desired-length").value = desiredLength;
-    generateGenerator();
+    await generateGenerator();
 });
 
-document.getElementById("desired-length").addEventListener("input", function adjustEntropyBasedOnDesiredLength(ev){
+document.getElementById("desired-length").addEventListener("input", async function adjustEntropyBasedOnDesiredLength(ev){
     if(!window.states || isNaN(ev.target.value)){
         return;
     }
@@ -136,30 +136,41 @@ document.getElementById("desired-length").addEventListener("input", function adj
         desiredBits = Infinity;
     }
     document.getElementById("desired-bits").value = desiredBits.toFixed(2);
-    generateGenerator();
+    await generateGenerator();
 });
 
-function generateGenerator(){
+async function generateGenerator(){
     let desiredLength = parseInt(document.getElementById("desired-length").value);
     let options = {
         desiredLength: isNaN(desiredLength) || desiredLength <= 0 ? 16 : desiredLength,
         specification: window.specification,
         showSpecification: false,
+        pwa: true
     };
     let states = window.states;
     document.getElementById("gen-jsfn").value = passgen.generateGeneratorAsJSString(states, options);
     let bookmarklet = passgen.generateGeneratorAsBookmarklet(states, options);
     document.getElementById("gen-book").value = bookmarklet;
     document.getElementById("gen-book-link").href = bookmarklet;
-    document.getElementById("gen-html").value = passgen.generateGeneratorAsHTML(states, options);
-    var dataUri = passgen.generateGeneratorAsDataURI(states, options);
+    let html = await passgen.generateGeneratorAsHTML(states, options);
+    document.getElementById("gen-html").value = html;
+    console.log(await passgen.generateGeneratorAsHTML(states, options));
+    var dataUri = await passgen.generateGeneratorAsDataURI(states, options);
     document.getElementById("gen-data").value = dataUri;
     document.getElementById("gen-data-link").href = dataUri;
+
+    // let replacePage = document.getElementById("gen-html-replace-page");
+    // replacePage.addEventListener("click", () => {
+    //     let doc = new DOMParser().parseFromString(html, "text/html");
+    //     document.head.innerHTML = doc.head.innerHTML;
+    //     document.body.innerHTML = doc.body.innerHTML;
+    // });
+    // replacePage.removeAttribute("disabled");
 }
 
 let dotElm = document.getElementById("states-dot");
 let vizElm = document.getElementById("states-viz");
-button.addEventListener("click", () => {
+button.addEventListener("click", async () => {
     let specification = window.specification = textarea.value;
     let states, labelMap;
     try {
@@ -190,14 +201,19 @@ button.addEventListener("click", () => {
     document.getElementById("entropy-equiv").innerText = equivalentToStandard.toFixed(2);
 
     let lastLength = byLength[byLength.length-1];
-    let secureLength = lastLength > 64 ?
-        byLength.findIndex(ent => ent >= 64) + 1
-        : byLength.length + Math.ceil((64-lastLength)/entropy);
-    document.getElementById("entropy-length").innerText = secureLength;
-    document.getElementById("desired-length").value = secureLength;
-    document.getElementById("desired-bits").value = 64;
+    let ATTACK_SECURE_BITS = 128;
+    let COLLISION_SECURE_BITS = 80;
+    let attackSecureLength = lastLength > ATTACK_SECURE_BITS ?
+        byLength.findIndex(ent => ent >= ATTACK_SECURE_BITS) + 1
+        : byLength.length + Math.ceil((ATTACK_SECURE_BITS-lastLength)/entropy);
+    let collisionSecureLength = lastLength > COLLISION_SECURE_BITS ?
+        byLength.findIndex(ent => ent >= COLLISION_SECURE_BITS) + 1
+        : byLength.length + Math.ceil((COLLISION_SECURE_BITS-lastLength)/entropy);
+    document.getElementById("entropy-length").innerText = attackSecureLength;
+    document.getElementById("desired-length").value = collisionSecureLength;
+    document.getElementById("desired-bits").value = COLLISION_SECURE_BITS;
 
-    generateGenerator();
+    await generateGenerator();
 
     dotElm.innerText = passgen.toDot(states, labelMap);
     renderVisualization();

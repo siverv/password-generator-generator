@@ -306,6 +306,9 @@ Therefore, if all $10^{22}$ passwords were generated with our obscure password g
 
 
 
+
+
+
 [4.2.3]: https://faculty.washington.edu/lind/symbolic-book/
 [4.3.3]: https://faculty.washington.edu/lind/symbolic-book/
 [3.3.2]: https://faculty.washington.edu/lind/symbolic-book/

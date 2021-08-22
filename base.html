@@ -100,7 +100,7 @@
                                     This is about equivalent to standard random password with a choice of <strong id="entropy-equiv">???</strong> characters 
                                 </li>
                                 <li>
-                                    To achieve a secure entropy for passwords, you should use at least <strong id="entropy-length">???</strong> tokens from the generator  
+                                    To achieve a proper attack-secure entropy for passwords (~128 bits of entropy), you should use at least <strong id="entropy-length">???</strong> tokens from the generator.
                                 </li>
                             </ul>
                         </div>
@@ -121,12 +121,12 @@
                         </legend>
                         <label>
                             Password length (number of tokens)
-                            <input id="desired-length" type="number" min="1" step="1" max="2000" value="32">
+                            <input id="desired-length" type="number" min="1" step="1" max="2000">
                         </label>
                         <p>- or -</p>
                         <label>
                             Bits of Entropy
-                            <input id="desired-bits" type="number" min="1" step="1" max="2000" value="64">
+                            <input id="desired-bits" type="number" min="1" step="1" max="2000">
                         </label>
                     </fieldset>
                     <wc-tab-panel selectedIndex="3" search-param="output-tabs">
@@ -155,6 +155,11 @@
                             </button>
                             <div id="gen-html-show">
                             </div>
+                            <!-- <div>
+                                <button id="gen-html-replace-page" disabled>
+                                    Replace current page with this html
+                                </button>
+                            </div> -->
                         </div>
                         <h4 slot="tab">Data-URI</h4>
                         <div slot="content" class="code-with-copy">
@@ -213,19 +218,25 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.13.13/dist/contrib/auto-render.min.js" integrity="sha384-vZTG03m+2yp6N6BNi5iM4rW4oIwk5DfcNdFfxkk9ZWpDriOkXX8voJBFrAO7MpVl" crossorigin="anonymous"></script>
 </template>
 <template id="password-generator-html-body">
-    <fieldset>
-        <legend>
-            <button id="generate">
-                Generate Password
-            </button>
-        </legend>
-        <input id="output" type="text">
+    <div class="passgen-area">
+        <style>
+            .passgen-area {
+                display: flex;
+                flex-direction: column;
+                max-width: 300px;
+                margin: auto;
+            }
+        </style>
+        <button id="generate">
+            Generate Password
+        </button>
+        <textarea id="output"></textarea>
         <button id="copy">copy</button>
         <script>
             /*@PASSWORD_GENERATOR_GOES_HERE@*/
             document.getElementById("generate").addEventListener("click", () => {
                 document.getElementById("output").value = newPassword();
-                    document.getElementById("copy").innerText = "Copy"
+                document.getElementById("copy").innerText = "Copy"
             })
             document.getElementById("copy").addEventListener("click", () => {
                 let value = document.getElementById("output").value;
@@ -237,6 +248,6 @@
                 }
             })
         </script>
-    </fieldset>
+    </div>
 </template>
 </html>

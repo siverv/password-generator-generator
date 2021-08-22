@@ -1,5 +1,6 @@
 import { setUnion, setSub, setIntersect, setOverlap, makeSetsDisjoint } from "./utils/setUtils.js";
 import yaml from './thirdParty/yaml.js';
+import { createIconPNGDataURI, createIconSVGDataURI, createManifestDataURI } from "./utils/pwaUtils.js";
 
 export function parseSpecification(specification){
     let json = yaml.load(specification);
@@ -332,19 +333,25 @@ export function generateGeneratorAsBookmarklet(states, options){
     return `javascript:alert((${jsString.replace(/\s+/g," ")})())`;
 }
 
-export function generateGeneratorAsHTML(states, options) {
+export async function generateGeneratorAsHTML(states, options) {
     let jsString = generateGeneratorAsJSString(states, options);
     let template = document.getElementById("password-generator-html-body");
     let snippet = template.content.cloneNode(true);
     let script = snippet.querySelector("script");
     script.innerHTML = script.innerText.replace("/*@PASSWORD_GENERATOR_GOES_HERE@*/", jsString);
+    let iconSVGDataURI = createIconSVGDataURI(generatePassword(states, 36));
+    let iconPNGDataURI = await createIconPNGDataURI(iconSVGDataURI);
+    let manifestDataURI = createManifestDataURI();
     return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">${options.pwa ? `
+    <link rel="shortcut icon" type="image/svg+xml" href="${iconSVGDataURI}"/>
+    <link rel="apple-touch-icon" href="${iconPNGDataURI}"/>
+    <link rel="manifest" href="${manifestDataURI}"/>` : ''}
     <title>Password Generator</title>
 </head>
 <body>
@@ -353,8 +360,8 @@ export function generateGeneratorAsHTML(states, options) {
 </html>`;
 }
 
-export function generateGeneratorAsDataURI(states, options) {
-    let htmlString = generateGeneratorAsHTML(states, options);
+export async function generateGeneratorAsDataURI(states, options) {
+    let htmlString = await generateGeneratorAsHTML(states, options);
     return `data:text/html;base64,${btoa(htmlString)}`;
 }
 

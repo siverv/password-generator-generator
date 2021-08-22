@@ -1,7 +1,6 @@
-import {monograms} from './data/monograms.mjs';
-import {bigrams} from './data/bigrams.mjs';
-import {trigrams} from './data/trigrams.mjs';
-import {effWords} from './data/effWords.mjs';
+import {monograms} from './data/monograms.js';
+import {bigrams} from './data/bigrams.js';
+import {effWords} from './data/effWords.js';
 
 const predefinedGens = new Map();
 
@@ -12,7 +11,7 @@ groups:
 states:
     -   window: []
         emit: n
-`)
+`);
 
 predefinedGens.set("Alphanumerical", `
 groups:
@@ -23,7 +22,7 @@ groups:
 states:
     -   window: []
         emit: 10 * a + A + n
-`)
+`);
 
 predefinedGens.set("Syllabetical", `
 groups:
@@ -37,7 +36,55 @@ states:
     -   name: vowel
         window: [v]
         emit: c
-`)
+`);
+
+predefinedGens.set("Syllabetical with some caps", `
+groups:
+    v: aeiouy
+    V: AEIOUY
+    c: bcdfghjklmnpqrstvwxz
+    C: BCDFGHJKLMNPQRSTVWXZ
+
+states:
+    -   name: consonant
+        window: [c]
+        emit: v + 0.1 * V
+    -   name: vowel
+        window: [v]
+        emit: c + 0.1 * C
+    -   name: cap-consonant
+        window: [C]
+        emit: v
+    -   name: cap-vowel
+        window: [V]
+        emit: c
+`);
+
+predefinedGens.set("Syllabetical with some caps and numbers", `
+groups:
+    v: aeiouy
+    V: AEIOUY
+    c: bcdfghjklmnpqrstvwxz
+    C: BCDFGHJKLMNPQRSTVWXZ
+    n: "0123456789"
+
+states:
+    -   name: consonant
+        window: [c]
+        emit: v + 0.1 * V + 0.1 * n
+    -   name: vowel
+        window: [v]
+        emit: c + 0.1 * C + 0.1 * n
+    -   name: cap-consonant
+        window: [C]
+        emit: v
+    -   name: cap-vowel
+        window: [V]
+        emit: c
+    -   name: rest
+        window: []
+        emit: 4 * n + v + V + c + C
+`);
 
 predefinedGens.set("Pronouncible (basic)", `
 groups:
@@ -58,7 +105,7 @@ states:
     -   name: double-consonant
         window: [c, c]
         emit: v
-`)
+`);
 
 
 predefinedGens.set("Semi-pronouncible", `
@@ -87,7 +134,7 @@ states:
     -   name: double-consonant
         window: [c + C, c + C]
         emit: 10 * v + V
-`)
+`);
 
 // predefinedGens.set("Correct Horse Battery Staple", `
 // groups:
@@ -130,7 +177,7 @@ ${effWords.map(word => `    - ${word}`).join("\n")}
 states:
     -   window: []
         emit: words
-`)
+`);
 
 
 // TODO: Fix problem with different window sizes.
@@ -165,7 +212,7 @@ states:
     -   window: []
         emit: fair-dice-roll
 
-`)
+`);
 
 
 predefinedGens.set("1-grams", `
@@ -175,40 +222,40 @@ states:
     -   window: []
         emit:
 ${Array.from(monograms.entries()).map(([key, value]) => {
-    return `
+        return `
             -   weight: ${value}
-                tokens: ${key[0].toLowerCase()}`
-}).join("")}
-`)
+                tokens: ${key[0].toLowerCase()}`;
+    }).join("")}
+`);
 
 const alphabet = Array.from("abcdefghijklmnopqrstuvwxyz");
 
 predefinedGens.set("Bigrams", `
 states: ${alphabet.map(first => {
-    return `
+        return `
     -   name: ${first}
         window: [${first}]
         emit: ${alphabet.map(second => {
-            return `
+        return `
         -   weight: ${bigrams.get((first + second).toUpperCase())}
-            tokens: ${second}`
-        }).join("")}
-`}).join("")}
-`)
+            tokens: ${second}`;
+    }).join("")}
+`;}).join("")}
+`);
 
 
 predefinedGens.set("Bigrams Case-Agnostic", `
 states: ${alphabet.map(first => {
-    return `
+        return `
     -   name: ${first}
         window: [${first + first.toUpperCase()}]
         emit: ${alphabet.map(second => {
-            return `
+        return `
         -   weight: ${bigrams.get((first + second).toUpperCase())}
-            tokens: ${second}${second.toUpperCase()}`
-        }).join("")}
-`}).join("")}
-`)
+            tokens: ${second}${second.toUpperCase()}`;
+    }).join("")}
+`;}).join("")}
+`);
 
 
 let N = 13;
@@ -218,17 +265,17 @@ let quantizedBigrams = new Map(alphabet.map(first => {
     let groupSize = Math.floor(scores.length / N);
     let quantizedSets = scores.map(
         ([second, score], index) => {
-            return [second, Math.floor(index/groupSize)]
+            return [second, Math.floor(index/groupSize)];
         }
     ).reduce((map, [second, score]) => {
         map.set(
             score,
             (map.get(score)||"")+second
-        )
+        );
         return map;
     }, new Map());
-    return [first, quantizedSets]
-}))
+    return [first, quantizedSets];
+}));
 
 predefinedGens.set("Quantized bigrams with shakeup", `
 groups: 
@@ -236,17 +283,17 @@ groups:
 
 states:
 ${Array.from(quantizedBigrams).map(([first, quantizedSets]) => {
-    return `
+        return `
     -   name: ${first}
         window: [${first}${first.toUpperCase()}]
         emit: ${Array.from(quantizedSets).map(([score, seconds]) => {
-            return `
+        return `
         -   weight: ${Math.pow(2,score-(N-6))}
-            tokens: ${seconds}`
-        }).join("")}
+            tokens: ${seconds}`;
+    }).join("")}
         -   ABC
-`}).join("")}
-`)
+`;}).join("")}
+`);
 
 
 let vowels = new Set("AEIOUY");
@@ -256,9 +303,9 @@ let orderedBigrams = Array.from(bigrams.entries())
 
 let doubleCategoryBigrams = orderedBigrams.filter(([bi]) => {
     return vowels.has(bi[0]) === vowels.has(bi[1]); 
-})
+});
 
-let topPercentiles = new Map(doubleCategoryBigrams.slice(Math.floor(doubleCategoryBigrams.length * 0.80)))
+let topPercentiles = new Map(doubleCategoryBigrams.slice(Math.floor(doubleCategoryBigrams.length * 0.80)));
 
 predefinedGens.set("Syllabetical except top 20 percentile bigrams", `
 groups:
@@ -269,17 +316,17 @@ groups:
 
 states:
 ${Array.from(alphabet).map(first => {
-    return `
+        return `
     -   name: ${first}
         window: [${first}${first.toUpperCase()}]
         emit: ${Array.from(alphabet)
-            .filter(second => topPercentiles.has((first+second).toUpperCase()))
-            .map((second) => {
-                return `
+        .filter(second => topPercentiles.has((first+second).toUpperCase()))
+        .map((second) => {
+            return `
         -   weight: 2
-            tokens: ${second}`}).join("")}
-        -   ${vowels.has(first.toUpperCase()) ? "cons" : "vowels"} + 0.1 * ${vowels.has(first.toUpperCase()) ? "CONS" : "VOWELS"}`}).join("")}
-`)
+            tokens: ${second}`;}).join("")}
+        -   ${vowels.has(first.toUpperCase()) ? "cons" : "vowels"} + 0.1 * ${vowels.has(first.toUpperCase()) ? "CONS" : "VOWELS"}`;}).join("")}
+`);
 
 
 predefinedGens.set("Syllabetical except top 20 percentile bigrams (triplet protection)", `
@@ -295,19 +342,19 @@ states:
         emit: cons + 0.1 * CONS
     -   name: double-cons
         window: [cons + CONS, cons + CONS]
-        emit: vowels + 0.1 * vowels
+        emit: vowels + 0.1 * VOWELS
 ${Array.from(alphabet).map(first => {
-    return `
+        return `
     -   name: ${first}
         window: [${first}${first.toUpperCase()}]
         emit: ${Array.from(alphabet)
-            .filter(second => topPercentiles.has((first+second).toUpperCase()))
-            .map((second) => {
-                return `
-        -   weight: 2
-            tokens: ${second}`}).join("")}
-        -   ${vowels.has(first.toUpperCase()) ? "cons" : "vowels"} + 0.1 * ${vowels.has(first.toUpperCase()) ? "CONS" : "VOWELS"}`}).join("")}
-`)
+        .filter(second => topPercentiles.has((first+second).toUpperCase()))
+        .map((second) => {
+            return `
+        -   weight: 1
+            tokens: ${second}`;}).join("")}
+        -   ${vowels.has(first.toUpperCase()) ? "cons" : "vowels"} + 0.1 * ${vowels.has(first.toUpperCase()) ? "CONS" : "VOWELS"}`;}).join("")}
+`);
 
 
 

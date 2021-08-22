@@ -676,4 +676,4 @@ export const bigrams = new Map([
     ["JX", 747],
     ["JQ", 722],
     ["QZ", 280], 
-])
+]);

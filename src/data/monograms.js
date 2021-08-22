@@ -26,4 +26,4 @@ export const monograms = new Map([
     ["X", 8369915],
     ["Z", 4975847],
     ["Q", 4550166],
-])
+]);

@@ -1,5 +1,25 @@
 import { setUnion, setIntersect } from "./utils/setUtils.js";
 
+/**
+ * @typedef StateEmission
+ * @property {number} weight
+ * @property {Set} tokens
+ */
+
+/**
+ * @typedef State
+ * @property {Array<Set<Set>>} window
+ * @property {Array<StateEmission>} emit
+ */
+
+/**
+ * Is `windowB` wholly contained withing `windowA`?
+ * Window $[b_i]_i$ is contained in a window $[a_i]_j$ if $a_i \subseteq a_i$ for all $i$.
+ * If $a_i$ is not defined, it's the complete set of possible tokens.
+ * @param {Array<Set<Set>>} windowA
+ * @param {Array<Set<Set>>} windowB 
+ * @returns {boolean}
+ */
 function windowContains(windowA, windowB){
     for(let i = 0; i < windowA.length; i++){
         let a = setUnion(...windowA[windowA.length - 1 - i]);
@@ -11,7 +31,12 @@ function windowContains(windowA, windowB){
     return true;
 }
 
-function minimalEntropyMatrix(states){
+/**
+ * Given two states indices `i` and `j`, the entry `matrix[i][j]` is the highest probability to go from `i` to `j`.
+ * @param {Array<State>} states 
+ * @returns {Array<Array<number>>} maximum transition probability matrix
+ */
+function maximumTransitionProbabilityMatrix(states){
     let stateKeyMatrix = new Map();
     for(let state of states){
         let row = new Map();
@@ -41,9 +66,17 @@ function minimalEntropyMatrix(states){
     return matrix;
 }
 
-function minimalEntropyPowerInLogSpace(pi, MEM, N){
-    let length = MEM.length;
-    let logMEM = MEM.map(r => r.map(c => -Math.log2(c)));
+/**
+ * Calculates the min-entropy of sequences of length up to and including N` 
+ * @param {Array<number>} pi initial state probability vector 
+ * @param {Array<Array<number>>} MTPM maximum transition probability matrix
+ * @param {number} N number of iterations
+ * @returns Array<number>
+ */
+
+function minimalEntropyPowerInLogSpace(pi, MTPM, N){
+    let length = MTPM.length;
+    let logMTPM = MTPM.map(r => r.map(c => -Math.log2(c)));
     let logPi = pi.map(p => -Math.log2(p));
     const minimalEntropyDotLogSpace = (v, M) => {
         let m = Infinity;
@@ -59,7 +92,7 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
         }
         return m;
     };
-    let R = logMEM;
+    let R = logMTPM;
     let ents = [];
     for(let n = 0; n < N; n++) {
         let nR = [];
@@ -69,8 +102,8 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
             for(let j = 0; j < length; j++) {
                 let m = Infinity;
                 for(let k = 0; k < length; k++){
-                    if(isFinite(R[i][k]) && isFinite(logMEM[k][j])) {
-                        m = Math.min(m, R[i][k] + logMEM[k][j]);
+                    if(isFinite(R[i][k]) && isFinite(logMTPM[k][j])) {
+                        m = Math.min(m, R[i][k] + logMTPM[k][j]);
                     }
                 }
                 nR[i][j] = m;
@@ -82,15 +115,30 @@ function minimalEntropyPowerInLogSpace(pi, MEM, N){
     return ents;
 }
 
-export function minimalEntropy(states, pi, N=100) {
-    if(states.length > 10){
-        N = 10;
+/**
+ * Gives the min-entropy and related calculations.
+ * @param {Array<State>} states 
+ * @param {Array<number>} pi initial state probability vector. By default: uniform probability
+ * @param {number} N maximal sequence length of exact entropy for approximation. If more than 10 distinct states, the default is 10 rather than 100.
+ * @returns {{
+ *  byLength: Array<number>,
+ *  entropy: number,
+ *  equivalentToStandard: number 
+ * }}
+ */
+export function minimalEntropy(states, pi, N) {
+    if(!N){
+        if(states.length > 10){
+            N = 10;
+        } else {
+            N = 100;
+        }
     }
-    let MEM = minimalEntropyMatrix(states);
+    let MTPM = maximumTransitionProbabilityMatrix(states);
     if(!pi){
         pi = Array.from({length: states.length}).map(() => 1 / states.length);
     }
-    let mep = minimalEntropyPowerInLogSpace(pi, MEM, N);
+    let mep = minimalEntropyPowerInLogSpace(pi, MTPM, N);
     let general = mep[mep.length - 1] / mep.length;
     return {
         byLength: mep,
